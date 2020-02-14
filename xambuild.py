@@ -26,11 +26,11 @@ def projectDirDefault():
     return projectDirEnv
 
 def droidDirDefault(args):
-    projectDirEnv = os.environ.get('XAMBUILD_DROID_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*Droid*")[0])
+    projectDirEnv = os.environ.get('XAMBUILD_DROID_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*.Droid*")[0])
     return projectDirEnv
 
 def iosDirDefault(args):
-    projectDirEnv = os.environ.get('XAMBUILD_IOS_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*iOS*")[0])
+    projectDirEnv = os.environ.get('XAMBUILD_IOS_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*.iOS*")[0])
     return projectDirEnv
 
 def platformDefault():
@@ -115,6 +115,10 @@ def buildAndDeploy(args):
     print("Building and deploying with '" +  args.buildConfiguration + "' configuration...")
     safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:Install"])
 
+def build(args):
+    print("Building and deploying with '" +  args.buildConfiguration + "' configuration...")
+    safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args)])
+
 def clean(args):
     print("Running a project clean...")
     safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:Clean"])
@@ -135,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--iosDir", dest="iosDir", default=iosDirDefault(args), help="xamarin.iOS project root directory.\nDefault is first directory containing 'iOS' in projectDir.", action="store_true")
     args = parser.parse_args()
 
-    choices = { 'default': default, 'buildAndDeploy': buildAndDeploy, 'clean': clean, 'updateAndroidResources': updateAndroidResources, 'nuget': nuget }
+    choices = { 'default': default, 'buildAndDeploy': buildAndDeploy, 'build': build, 'clean': clean, 'updateAndroidResources': updateAndroidResources, 'nuget': nuget }
     if (args.action[0] in choices):
         choices.get(args.action.pop(0), default)(args)
     else:
