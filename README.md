@@ -39,6 +39,7 @@ This defaults to the first (alphabetical) directory containing ".iOS" in the Roo
 
 ## Running
 Usage: `xambuild.py <flags> <command ...>`
+
 `xambuild` offers the following commands:
 
 * `buildAndDeploy` builds and deploys your app according to the specified options. For Android, this assumes you have one and only one device connected via ADB.
