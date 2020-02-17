@@ -38,6 +38,7 @@ This is the location of your android project directory with respect to your [Roo
 This defaults to the first (alphabetical) directory containing ".iOS" in the Root Project Directory. You can override this with the `XAMBUILD_IOS_DIR` environment variable or by supplying `-i <directory>` or `--iosDir <directory>`.
 
 ## Running
+Usage: `xambuild.py <flags> <command ...>`
 `xambuild` offers the following commands:
 
 * `buildAndDeploy` builds and deploys your app according to the specified options. For Android, this assumes you have one and only one device connected via ADB.
