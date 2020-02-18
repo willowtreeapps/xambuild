@@ -17,6 +17,15 @@
 ## XAMBUILD_PLATFORM- Default build platform if one is not specified in invocation flags. Default value is "android".
 ## XAMBUILD_CONFIGURATION- Default build configuration if one is not specified in invocation flags. Default value is "Debug".
 
+# Error codes:
+## 0: Success.
+## 1: Cancelled by keyboard interrupt.
+## 2: Error parsing platform. Check XAMBUILD_PLATFORM and/or the --platform argument, if provided.
+## 3: Error finding platform-specific .csproj file. 
+## 4: Unable to find platform-specific folders in the project directory.
+## Others: If msbuild or nuget emit a nonzero error code, xambuild will have its error code equal the wrapped program's error code.
+## All xambuild errors emit a message to standard out along with the error codes shown above.
+
 import argparse, glob, os, subprocess, sys
 
 # Variable defaults
@@ -67,7 +76,8 @@ def safeRun(toRun):
     try:
         if toRun:
             print("=> " + " ".join(toRun))
-            subprocess.run(toRun)
+            retcode = subprocess.run(toRun).returncode
+            return retcode
         else:
             print("Error: Asked to run program ''.")
     except KeyboardInterrupt:
@@ -141,9 +151,11 @@ if __name__ == '__main__':
 
     choices = { 'default': default, 'buildAndDeploy': buildAndDeploy, 'build': build, 'clean': clean, 'updateAndroidResources': updateAndroidResources, 'nuget': nuget }
     if (args.action[0] in choices):
-        choices.get(args.action.pop(0), default)(args)
+        errcode = choices.get(args.action.pop(0), default)(args)
     else:
         default(args)
-
     print("Done!")
-    SystemExit(0)
+    if errcode:
+        SystemExit(errcode)
+    else:
+        SystemExit(0)

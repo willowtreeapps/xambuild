@@ -49,3 +49,13 @@ Usage: `xambuild.py <flags> <command ...>`
 * `nuget` wraps the nuget executable, with the two following additions:
 	* `wipe` wipes your nuget cache and all cached files. Using this in conjunction with the clean command fixes 99% of strange build issues, especially when changing nuget sources.
 	* `restoreAll` restores the nuget packages for your project and all subprojects in one fell swoop. This is useful after fresh clones and wipes.
+
+### Error codes:
+* 0: Success.
+* 1: Cancelled by keyboard interrupt.
+* 2: Error parsing platform. Check XAMBUILD_PLATFORM and/or the --platform argument, if provided.
+* 3: Error finding platform-specific .csproj file. 
+* 4: Unable to find platform-specific folders in the project directory.
+* Others: If msbuild or nuget emit a nonzero error code, xambuild will have its error code equal the wrapped program's error code.
+
+All xambuild errors emit a message to standard out along with the error codes shown above.
