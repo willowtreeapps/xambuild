@@ -7,7 +7,7 @@
 # The user interface should require as little setup as
 # possible and should be guided.
 
-# Functions supported: build, clean, deploy, update android resources,
+# Functions supported: build, clean, deploy, update android resources, android sign, view environment variable config state,
 # nuget wipe/restoreAll/* (this script wraps nuget to add wipe and restoreAll)
 
 # Optional environment variables:
@@ -23,6 +23,7 @@
 ## 2: Error parsing platform. Check XAMBUILD_PLATFORM and/or the --platform argument, if provided.
 ## 3: Error finding platform-specific .csproj file. 
 ## 4: Unable to find platform-specific folders in the project directory.
+## 5: No action or bad action supplied.
 ## Others: If msbuild or nuget emit a nonzero error code, xambuild will have its error code equal the wrapped program's error code.
 ## All xambuild errors emit a message to standard out along with the error codes shown above.
 
@@ -35,12 +36,20 @@ def projectDirDefault():
     return projectDirEnv
 
 def droidDirDefault(args):
-    projectDirEnv = os.environ.get('XAMBUILD_DROID_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*.Droid*")[0])
-    return projectDirEnv
+        try:
+            projectDirEnv = os.environ.get('XAMBUILD_DROID_DIR') or os.path.realpath(glob.glob(args.projectDir + os.sep + "*.Droid")[0])
+            return projectDirEnv
+        except:
+            print("Platform directory could not be found, exiting.")
+            SystemExit(4)
 
 def iosDirDefault(args):
-    projectDirEnv = os.environ.get('XAMBUILD_IOS_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*.iOS*")[0])
-    return projectDirEnv
+        try:
+            projectDirEnv = os.environ.get('XAMBUILD_IOS_DIR') or os.path.realpath(args.projectDir + os.sep + glob.glob("*.iOS")[0])
+            return projectDirEnv
+        except IndexError:
+            print("Platform directory could not be found, exiting.")
+            SystemExit(4)
 
 def platformDefault():
     platformEnv = os.environ.get('XAMBUILD_PLATFORM') or "android"
@@ -62,12 +71,13 @@ def platformDir(args):
         SystemExit(2)
 
 def platformCsproj(args):
-    csproj = glob.glob(platformDir(args) + os.sep + "*.csproj")[0]
-    if csproj:
+    try:
+        csproj = glob.glob(platformDir(args) + os.sep + "*.csproj")[0]
         return csproj
-    else:
-        print("Error: no csproj file found for the specified platform. Try setting XAMBUILD_DROID_DIR or XAMBUILD_IOS_DIR.")
+    except IndexError:
+        print("Error finding platform-specific csproj file. Check to see that your platform directory is correct.")
         SystemExit(3)
+
 
 def buildConfigurationString(args):
     return "/p:Configuration="+args.buildConfiguration
@@ -89,7 +99,11 @@ def safeRun(toRun):
 # Script commands
 
 def default(args):
-    print("Invalid action. Try ./xambuild.py -h for help.")
+    if len(args.action) == 0:
+        print("No action given. Try ./xambuild.ph -h for help.")
+    else:
+        print("Invalid action '" + args.action[0] + "'. Try ./xambuild.py -h for help.")
+    return 5
 
 def nuget(args):
     if len(args.action) > 0 and args.action[0] == "restoreAll":
@@ -122,38 +136,54 @@ def nugetRestore(args):
         safeRun(["nuget", "restore", project])
 
 def buildAndDeploy(args):
-    print("Building and deploying with '" +  args.buildConfiguration + "' configuration...")
-    safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:Install"])
+    print("Building and deploying " +  args.buildConfiguration + " configuration...")
+    return safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:Install"])
 
 def build(args):
-    print("Building and deploying with '" +  args.buildConfiguration + "' configuration...")
-    safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args)])
+    print("Building " +  args.buildConfiguration + " configuration...")
+    return safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args)])
+
+def listEnvVars(args):
+    print("XAMBUILD_PROJECT_DIR:", os.environ.get('XAMBUILD_PROJECT_DIR') or "not set")
+    print("XAMBUILD_DROID_DIR:", os.environ.get('XAMBUILD_DROID_DIR') or "not set")
+    print("XAMBUILD_IOS_DIR:", os.environ.get('XAMBUILD_IOS_DIR') or "not set")
+    print("XAMBUILD_PLATFORM:", os.environ.get('XAMBUILD_PLATFORM') or "not set")
+    print("XAMBUILD_CONFIGURATION:", os.environ.get('XAMBUILD_CONFIGURATION') or "not set")
+    return 0
+
+def androidSign(args):
+    print("Building and signing " +  args.buildConfiguration + " configuration...")
+    return safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:SignAndroidPackage"])
 
 def clean(args):
     print("Running a project clean...")
-    safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:Clean"])
+    return safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:Clean"])
 
 def updateAndroidResources(args):
     print("Updating android resources...")
-    safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:UpdateAndroidResources"])
+    return safeRun(["msbuild", platformCsproj(args), buildConfigurationString(args), "/t:UpdateAndroidResources"])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Builds and mantains Xamarin projects outside of Visual Studio by calling msbuild/nuget directly.", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-p", "--platform", dest="platform", default=platformDefault(), help="specify platform to compile.\n    *Default is XAMBUILD_PLATFORM or 'android'\n    *Expects one of 'android' or 'ios'.", action="store_true")
-    parser.add_argument("-d", "--projectDir", dest="projectDir", default=projectDirDefault(), help="xamarin project root directory.\n    *Default is '.'", action="store_true")
-    parser.add_argument("-c", "--configuration", dest="buildConfiguration", default=buildConfigurationDefault(), help="Set build configuration. \n    *Default is 'Debug'", action="store_true")
+    parser.add_argument("-p", "--platform", dest="platform", default=platformDefault(), help="specify platform to compile.\n    *Default is XAMBUILD_PLATFORM or 'android'\n    *Expects one of 'android' or 'ios'.", type=str)
+    parser.add_argument("-d", "--projectDir", dest="projectDir", default=projectDirDefault(), help="xamarin project root directory.\n    *Default is '.'", type=str)
+    parser.add_argument("-c", "--configuration", dest="buildConfiguration", default=buildConfigurationDefault(), help="Set build configuration. \n    *Default is 'Debug'", type=str)
+    parser.add_argument("-a", "--droidDir", dest="droidDir", help="xamarin.android project root directory.\nDefault is first directory containing 'Droid' in projectDir.", type=str)
+    parser.add_argument("-i", "--iosDir", dest="iosDir", help="xamarin.iOS project root directory.\nDefault is first directory containing 'iOS' in projectDir.", type=str)
     parser.add_argument("action", type=str, nargs='+', help="actions are buildAndDeploy, clean, updateAndroidResources, and nuget <wipe, restoreAll, *>")
     args = parser.parse_args()
 
-    parser.add_argument("-a", "--droidDir", dest="droidDir", default=droidDirDefault(args), help="xamarin.android project root directory.\nDefault is first directory containing 'Droid' in projectDir.", action="store_true")
-    parser.add_argument("-i", "--iosDir", dest="iosDir", default=iosDirDefault(args), help="xamarin.iOS project root directory.\nDefault is first directory containing 'iOS' in projectDir.", action="store_true")
-    args = parser.parse_args()
+    if not args.iosDir:
+        args.iosDir = iosDirDefault(args)
 
-    choices = { 'default': default, 'buildAndDeploy': buildAndDeploy, 'build': build, 'clean': clean, 'updateAndroidResources': updateAndroidResources, 'nuget': nuget }
+    if not args.droidDir:
+        args.droidDir = droidDirDefault(args)
+
+    choices = { 'default': default, 'buildAndDeploy': buildAndDeploy, 'build': build, 'clean': clean, 'updateAndroidResources': updateAndroidResources, 'nuget': nuget, 'listEnvVars': listEnvVars, 'androidSign': androidSign }
     if (args.action[0] in choices):
         errcode = choices.get(args.action.pop(0), default)(args)
     else:
-        default(args)
+        errcode = default(args)
     print("Done!")
     if errcode:
         SystemExit(errcode)
