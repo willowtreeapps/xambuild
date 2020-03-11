@@ -52,6 +52,8 @@ Usage: `xambuild.py <flags> <command ...>`
 	* `wipe` wipes your nuget cache and all cached files. Using this in conjunction with the clean command fixes 99% of strange build issues, especially when changing nuget sources.
 	* `restoreAll` restores the nuget packages for your project and all subprojects in one fell swoop. This is useful after fresh clones and wipes.
 
+`launch.json` and `tasks.json` files designed for use with Visual Studio Code have also been provided.
+
 ### Error codes:
 * 0: Success.
 * 1: Cancelled by keyboard interrupt.

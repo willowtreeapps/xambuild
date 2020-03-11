@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: xamarin-build",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["-d", "..", "-c", "Debug-P", "buildAndDeploy"]
+        },
+        {
+            "name": "Android Debug",
+            "type": "xamarin",
+            "request": "launch",
+            "packageName": "com.foxsports.android"
+        }
+    ]
+}

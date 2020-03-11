@@ -1,0 +1,76 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "command": "${workspaceFolder}/xambuild.py",
+            "type": "shell",
+            "args": [
+                "build"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build And Deploy",
+            "command": "${workspaceFolder}/xambuild.py",
+            "type": "shell",
+            "args": [
+                "buildAndDeploy"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Update Resources",
+            "command": "${workspaceFolder}/xambuild.py",
+            "type": "shell",
+            "args": [
+                "updateAndroidResources"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Clean",
+            "command": "${workspaceFolder}/xambuild.py",
+            "type": "shell",
+            "args": [
+                "clean"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Wipe Nuget and Restore Packages",
+            "dependsOn": ["Wipe Nuget", "Restore Packages"],
+            "dependsOrder": "sequence",
+            "command": "$echo",
+            "args": [
+                "Nuget wiped and packages restored."
+            ],
+            "type": "shell",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Restore Packages",
+            "command": "${workspaceFolder}/xambuild.py",
+            "args": [
+                "nuget",
+                "restoreAll"
+            ],
+            "type": "shell",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Wipe Nuget",
+            "command": "${workspaceFolder}/xambuild.py",
+            "args": [
+                "nuget",
+                "wipe"
+            ],
+            "type": "shell",
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
